@@ -13,6 +13,8 @@ public class CanonCtrl : MonoBehaviour
     public float reloadRate = 1f;
     public TMPro.TMP_Text bulletText;
     public TMPro.TMP_Text bulletTotalText;
+    public Transform camara;       // arrastra la cámara del jugador
+    public float alcance = 100f;
 
     private InputActionMap _inputActionMap;
     private InputAction _fire;
@@ -22,7 +24,7 @@ public class CanonCtrl : MonoBehaviour
     void Start()
     {
         _inputActionMap = inputActionAsset.FindActionMap("Player");
-        _fire = _inputActionMap.FindAction("Jump");
+        _fire = _inputActionMap.FindAction("Attack");
         _reload = _inputActionMap.FindAction("Crouch");
 
         currentBullets = capacity;
@@ -40,7 +42,15 @@ public class CanonCtrl : MonoBehaviour
             currentBullets--;
              bulletText.text = currentBullets.ToString();
              bulletTotalText.text = capacity + " / " + currentBullets;
-            Instantiate(bullet, spawnPoint.position, bullet.transform.rotation);
+           // Dirección hacia donde apunta la cámara
+            Vector3 direccion = camara.forward;
+            // Si la mira apunta a algo, la bala va hacia ese punto (ignorando al propio jugador)
+            if (Physics.Raycast(camara.position, camara.forward, out RaycastHit hit, alcance)
+            && !hit.collider.transform.IsChildOf(transform.root))
+            {
+                direccion = (hit.point - spawnPoint.position).normalized;
+            }
+            Instantiate(bullet, spawnPoint.position, Quaternion.FromToRotation(Vector3.up, direccion));
             BulletSound.Play();
             _nextFireTime = Time.time + fireRate;
         }
